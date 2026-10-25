@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: james-property-mng
+    name: james-property
     runtime: node
     region: oregon
     plan: 0.5c-512mb
@@ -18,7 +18,7 @@ services:
       - key: ADMIN_EMAIL
         value: jamespropertymng@gmail.com
       - key: PUBLIC_URL
-        value: https://james-property-mng.onrender.com
+        value: https://james-property.onrender.com
       - key: SEO_INDEXING_ENABLED
         value: "false"
     disk:
