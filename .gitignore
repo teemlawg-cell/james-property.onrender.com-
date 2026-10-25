@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+/data/james-property.sqlite
+/data/james-property.sqlite-shm
+/data/james-property.sqlite-wal
+/data/uploads/
+/data/*
+!/data/properties.seed.json
+/Instagram.html
+/Instagram_files/

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: james-property-mng
+    runtime: node
+    region: oregon
+    plan: 0.5c-512mb
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    autoDeployTrigger: commit
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATA_DIR
+        value: /var/data
+      - key: ADMIN_EMAIL
+        value: jamespropertymng@gmail.com
+      - key: PUBLIC_URL
+        value: https://james-property-mng.onrender.com
+      - key: SEO_INDEXING_ENABLED
+        value: "false"
+    disk:
+      name: james-property-data
+      mountPath: /var/data
+      sizeGB: 1

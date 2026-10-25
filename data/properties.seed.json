@@ -1,0 +1,387 @@
+[
+  {
+    "id": "willow-cottage",
+    "name": "Willow Court Apartment",
+    "type": "Apartment",
+    "city": "Long Beach",
+    "neighborhood": "Eastside",
+    "price": 1750,
+    "beds": 2,
+    "baths": 1,
+    "size": 940,
+    "description": "A fully furnished two-bedroom apartment with a welcoming living area, a practical kitchen, and comfortable space to settle in. The Eastside location puts everyday shops, local parks, and transit within easy reach.",
+    "features": [
+      "Fully furnished",
+      "Equipped kitchen",
+      "On-site laundry",
+      "Near local parks"
+    ],
+    "image": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1680382578857-c331ead9ed51?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1644421439741-712c7fde7e95?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": true,
+    "available": true
+  },
+  {
+    "id": "oak-street-flat",
+    "name": "Oak Street Flat",
+    "type": "Apartment",
+    "city": "Los Angeles",
+    "neighborhood": "Central LA",
+    "price": 1700,
+    "beds": 2,
+    "baths": 1,
+    "size": 1080,
+    "description": "A vacant, unfurnished two-bedroom apartment with a bright open living area, practical kitchen, and large windows. The convenient central location keeps everyday services and major routes close by.",
+    "features": [
+      "Unfurnished interior",
+      "Assigned parking",
+      "On-site laundry",
+      "Large windows"
+    ],
+    "image": "https://images.unsplash.com/photo-1630699144867-37acec97df5a?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1630699144867-37acec97df5a?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1789352844327-765b16a51b9b?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1676320514136-5a15d9f97dfa?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "coastal-view-condo",
+    "name": "Coastal View Condo",
+    "type": "Condo",
+    "city": "Long Beach",
+    "neighborhood": "Westside",
+    "price": 1650,
+    "beds": 2,
+    "baths": 2,
+    "size": 1260,
+    "description": "A vacant two-bedroom, two-bath condo with an open, unfurnished living space and a balcony. The home offers an easy-to-maintain layout with convenient access to neighborhood services and waterfront routes.",
+    "features": [
+      "Unfurnished interior",
+      "Two full bathrooms",
+      "Private balcony",
+      "Gated parking"
+    ],
+    "image": "https://images.unsplash.com/photo-1630699375895-fe5996d163ee?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1630699375895-fe5996d163ee?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1569152811536-fb47aced8409?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1643949700215-e61cdca053f7?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "garden-court",
+    "name": "Garden Court Apartment",
+    "type": "Apartment",
+    "city": "Oak Park",
+    "neighborhood": "Central Oak Park",
+    "price": 950,
+    "beds": 1,
+    "baths": 1,
+    "size": 760,
+    "description": "A vacant one-bedroom apartment with a separate living area, an unfurnished bedroom, and a simple, practical kitchen. Shared grounds and nearby daily conveniences add to the easy residential setting.",
+    "features": [
+      "Unfurnished interior",
+      "Shared garden",
+      "On-site laundry",
+      "Storage space"
+    ],
+    "image": "https://images.unsplash.com/photo-1630699376059-b781970715b1?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1630699376059-b781970715b1?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1789353527453-2121cc451a89?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1643297551340-19d8ad4f20ad?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "sycamore-house",
+    "name": "Sycamore House",
+    "type": "House",
+    "city": "San Pedro",
+    "neighborhood": "Central San Pedro",
+    "price": 2700,
+    "beds": 3,
+    "baths": 2,
+    "size": 1980,
+    "description": "A vacant three-bedroom home with an unfurnished living room, a practical kitchen, and an outdoor area. The flexible layout offers room to work, relax, and make the space your own.",
+    "features": [
+      "Unfurnished interior",
+      "Private outdoor area",
+      "Two-car garage",
+      "Laundry hookups"
+    ],
+    "image": "https://images.unsplash.com/photo-1630699376106-d550afb865bd?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1630699376106-d550afb865bd?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1789352844327-765b16a51b9b?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1644421439741-712c7fde7e95?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": false
+  },
+  {
+    "id": "laurel-loft",
+    "name": "Laurel Loft",
+    "type": "Apartment",
+    "city": "Ceres",
+    "neighborhood": "Central Ceres",
+    "price": 850,
+    "beds": 1,
+    "baths": 1,
+    "size": 690,
+    "description": "A vacant one-bedroom home with an open living area, an unfurnished bedroom, and practical built-in storage. The straightforward layout is easy to personalize and maintain.",
+    "features": [
+      "Unfurnished interior",
+      "Open-plan living",
+      "On-site laundry",
+      "Storage closet"
+    ],
+    "image": "https://images.unsplash.com/photo-1757742690834-aa581b9f53b2?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1757742690834-aa581b9f53b2?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1680382578857-c331ead9ed51?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1676320514136-5a15d9f97dfa?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "palm-court-studio",
+    "name": "Palm Court Apartment",
+    "type": "Apartment",
+    "city": "Riverside",
+    "neighborhood": "Central Riverside",
+    "price": 800,
+    "beds": 1,
+    "baths": 1,
+    "size": 510,
+    "description": "A vacant one-bedroom apartment with a compact, efficient layout, uncluttered interior, and generous closet space. A calm, neutral finish leaves room to arrange the home to suit your routine.",
+    "features": [
+      "Unfurnished interior",
+      "Updated kitchen",
+      "Dedicated parking",
+      "Natural light"
+    ],
+    "image": "https://images.unsplash.com/photo-1625585598750-3535fe40efb3?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1625585598750-3535fe40efb3?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1569152811536-fb47aced8409?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1643949700215-e61cdca053f7?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "juniper-row-townhouse",
+    "name": "Juniper Row Townhouse",
+    "type": "Townhouse",
+    "city": "Sacramento",
+    "neighborhood": "Central Sacramento",
+    "price": 2500,
+    "beds": 3,
+    "baths": 2.5,
+    "size": 1540,
+    "description": "A vacant three-bedroom townhouse with an unfurnished main living area and private bedrooms upstairs. An attached garage and easy-care patio add useful everyday space.",
+    "features": [
+      "Unfurnished interior",
+      "Attached garage",
+      "Private patio",
+      "Community green space"
+    ],
+    "image": "/assets/townhouse-cover.jpg",
+    "images": [
+      {
+        "url": "/assets/townhouse-cover.jpg",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1789353527453-2121cc451a89?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1643297551340-19d8ad4f20ad?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "cypress-duplex",
+    "name": "Cypress Avenue Duplex",
+    "type": "Duplex",
+    "city": "Hawthorne",
+    "neighborhood": "Central Hawthorne",
+    "price": 1500,
+    "beds": 2,
+    "baths": 1,
+    "size": 980,
+    "description": "A vacant two-bedroom home with a private entrance, a light-filled living room, and a functional kitchen. Its simple, unfurnished layout offers a comfortable starting point for a new home.",
+    "features": [
+      "Unfurnished interior",
+      "Private entrance",
+      "Small patio",
+      "Off-street parking"
+    ],
+    "image": "https://images.unsplash.com/photo-1519119668-e2ea8e7278f7?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1519119668-e2ea8e7278f7?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1789352844327-765b16a51b9b?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1676320514136-5a15d9f97dfa?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "seaview-court",
+    "name": "Seaview Court Apartment",
+    "type": "Apartment",
+    "city": "San Pedro",
+    "neighborhood": "North San Pedro",
+    "price": 1550,
+    "beds": 2,
+    "baths": 1,
+    "size": 940,
+    "description": "A vacant two-bedroom apartment with a separate dining nook, an open unfurnished living room, and practical closet space. Shared grounds and nearby services make daily routines straightforward.",
+    "features": [
+      "Unfurnished interior",
+      "Shared courtyard",
+      "On-site laundry",
+      "Bike storage"
+    ],
+    "image": "https://plus.unsplash.com/premium_photo-1683141170332-d7529337265c?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1683141170332-d7529337265c?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1569152811536-fb47aced8409?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1644421439741-712c7fde7e95?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  },
+  {
+    "id": "casa-verde",
+    "name": "Casa Verde",
+    "type": "House",
+    "city": "Hawthorne",
+    "neighborhood": "South Hawthorne",
+    "price": 2800,
+    "beds": 3,
+    "baths": 2,
+    "size": 1420,
+    "description": "A vacant three-bedroom home with an unfurnished living and dining area, a bright kitchen, and a private outdoor space. The flexible layout gives you room to create a home office or dining area.",
+    "features": [
+      "Unfurnished interior",
+      "Private garden",
+      "Driveway parking",
+      "Washer and dryer hookups"
+    ],
+    "image": "https://plus.unsplash.com/premium_photo-1711464867501-7961459d7e13?auto=format&fit=crop&w=1200&q=80",
+    "images": [
+      {
+        "url": "https://plus.unsplash.com/premium_photo-1711464867501-7961459d7e13?auto=format&fit=crop&w=1200&q=80",
+        "label": "Interior"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1789353527453-2121cc451a89?auto=format&fit=crop&w=1200&q=80",
+        "label": "Kitchen"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1643949700215-e61cdca053f7?auto=format&fit=crop&w=1200&q=80",
+        "label": "Bathroom"
+      }
+    ],
+    "furnished": false,
+    "available": true
+  }
+]

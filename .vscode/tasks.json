@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start housing website",
+      "type": "shell",
+      "command": "npm.cmd start",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "inAgents": true,
+      "problemMatcher": []
+    }
+  ]
+}

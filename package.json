@@ -1,0 +1,15 @@
+{
+  "name": "james-property-mng",
+  "version": "1.0.0",
+  "private": true,
+  "description": "James Property MNG property listings and owner dashboard",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "setup:admin": "node server.js setup-admin",
+    "reset:admin": "node server.js reset-admin",
+    "test": "node --test"
+  }
+}
