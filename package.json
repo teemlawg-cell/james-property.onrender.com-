@@ -10,6 +10,10 @@
     "start": "node server.js",
     "setup:admin": "node server.js setup-admin",
     "reset:admin": "node server.js reset-admin",
+    "migrate:supabase": "node scripts/migrate-to-supabase.js",
     "test": "node --test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0"
   }
 }

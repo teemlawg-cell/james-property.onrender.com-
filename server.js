@@ -7,11 +7,24 @@ const os = require("node:os");
 const { randomBytes, randomUUID, scrypt, timingSafeEqual } = require("node:crypto");
 const { promisify } = require("node:util");
 const { DatabaseSync } = require("node:sqlite");
+const { createClient } = require("@supabase/supabase-js");
 
 const scryptAsync = promisify(scrypt);
 const ROOT = __dirname;
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, "data"));
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SUPABASE_PHOTO_BUCKET = process.env.SUPABASE_PHOTO_BUCKET || "property-photos";
+const USE_SUPABASE = Boolean(SUPABASE_URL || SUPABASE_SERVICE_ROLE_KEY);
+if (USE_SUPABASE && (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)) {
+  throw new Error("Set both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+}
+const supabase = USE_SUPABASE
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  })
+  : null;
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "127.0.0.1";
 const PRODUCTION = process.env.NODE_ENV === "production";
@@ -29,8 +42,10 @@ const SESSION_COOKIE = "jpm_owner_session";
 const sessions = new Map();
 const loginAttempts = new Map();
 
-fs.mkdirSync(UPLOAD_DIR, { recursive: true, mode: 0o700 });
-const database = new DatabaseSync(path.join(DATA_DIR, "james-property.sqlite"));
+let database = null;
+if (!USE_SUPABASE) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true, mode: 0o700 });
+  database = new DatabaseSync(path.join(DATA_DIR, "james-property.sqlite"));
 database.exec(`
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
@@ -274,6 +289,7 @@ if (!database.prepare("SELECT value FROM settings WHERE key = 'townhouse-cover-r
     throw error;
   }
 }
+}
 
 function respond(response, status, data, headers = {}) {
   const body = JSON.stringify(data);
@@ -401,6 +417,126 @@ function isLoopbackAddress(address) {
   return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
 }
 
+function checkSupabaseResult(result, operation) {
+  if (result.error) throw new Error(`Supabase ${operation} failed: ${result.error.message}`);
+  return result.data;
+}
+
+async function initializeSupabase() {
+  const bucketResult = await supabase.storage.getBucket(SUPABASE_PHOTO_BUCKET);
+  const bucket = checkSupabaseResult(bucketResult, "photo bucket check");
+  if (!bucket.public) {
+    throw new Error(`Supabase storage bucket "${SUPABASE_PHOTO_BUCKET}" must be public for property photos.`);
+  }
+
+  const properties = checkSupabaseResult(
+    await supabase.from("properties").select("id").limit(1),
+    "property table check"
+  );
+  if (properties.length > 0) return;
+
+  const seed = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "properties.seed.json"), "utf8"));
+  const timestamp = new Date().toISOString();
+  checkSupabaseResult(
+    await supabase.from("properties").insert(seed.map((property) => ({
+      id: property.id,
+      data: property,
+      updated_at: timestamp
+    }))),
+    "starter listings initialization"
+  );
+}
+
+async function getAdministrator() {
+  if (!USE_SUPABASE) return database.prepare("SELECT id, email, password_salt, password_hash, created_at FROM administrators WHERE id = 1").get() || null;
+  return checkSupabaseResult(
+    await supabase.from("administrators").select("id, email, password_salt, password_hash, created_at").eq("id", 1).maybeSingle(),
+    "administrator lookup"
+  );
+}
+
+async function getAdministratorByEmail(email) {
+  if (!USE_SUPABASE) {
+    return database.prepare("SELECT id, email, password_salt, password_hash FROM administrators WHERE email = ? COLLATE NOCASE").get(email) || null;
+  }
+  return checkSupabaseResult(
+    await supabase.from("administrators").select("id, email, password_salt, password_hash").eq("email", email).maybeSingle(),
+    "administrator lookup"
+  );
+}
+
+async function createAdministrator(email, credentials) {
+  const administrator = {
+    id: 1,
+    email,
+    password_salt: credentials.salt,
+    password_hash: credentials.hash,
+    created_at: new Date().toISOString()
+  };
+  if (!USE_SUPABASE) {
+    database.prepare("INSERT INTO administrators (id, email, password_salt, password_hash, created_at) VALUES (1, ?, ?, ?, ?)")
+      .run(administrator.email, administrator.password_salt, administrator.password_hash, administrator.created_at);
+    return;
+  }
+  const result = await supabase.from("administrators").insert(administrator);
+  if (result.error?.code === "23505") throw fail(409, "An admin account already exists. Sign in instead.");
+  checkSupabaseResult(result, "administrator creation");
+}
+
+async function updateAdministrator(credentials) {
+  if (!USE_SUPABASE) {
+    database.prepare("UPDATE administrators SET password_salt = ?, password_hash = ? WHERE id = 1")
+      .run(credentials.salt, credentials.hash);
+    return;
+  }
+  checkSupabaseResult(
+    await supabase.from("administrators")
+      .update({ password_salt: credentials.salt, password_hash: credentials.hash })
+      .eq("id", 1),
+    "administrator password update"
+  );
+}
+
+async function getProperty(id) {
+  if (!USE_SUPABASE) return database.prepare("SELECT data FROM properties WHERE id = ?").get(id) || null;
+  return checkSupabaseResult(
+    await supabase.from("properties").select("data").eq("id", id).maybeSingle(),
+    "property lookup"
+  );
+}
+
+async function deleteProperty(id) {
+  if (!USE_SUPABASE) {
+    database.prepare("DELETE FROM properties WHERE id = ?").run(id);
+    return;
+  }
+  checkSupabaseResult(await supabase.from("properties").delete().eq("id", id), "property deletion");
+}
+
+async function getActivity() {
+  if (!USE_SUPABASE) return database.prepare("SELECT message, time FROM activity ORDER BY id DESC LIMIT 30").all();
+  return checkSupabaseResult(
+    await supabase.from("activity").select("message, time").order("id", { ascending: false }).limit(30),
+    "activity lookup"
+  );
+}
+
+async function clearActivity() {
+  if (!USE_SUPABASE) {
+    database.prepare("DELETE FROM activity").run();
+    return;
+  }
+  checkSupabaseResult(await supabase.from("activity").delete().neq("id", 0), "activity clearing");
+}
+
+async function checkDatabaseHealth() {
+  if (!USE_SUPABASE) {
+    database.prepare("SELECT 1").get();
+    return;
+  }
+  checkSupabaseResult(await supabase.from("properties").select("id").limit(1), "health check");
+}
+
 function isValidPhotoUrl(value) {
   if (typeof value !== "string" || !value || value.length > 2048) return false;
   let photoUrl;
@@ -483,14 +619,20 @@ function normalizeProperty(input, id) {
   };
 }
 
-function getPublicProperties() {
-  return database.prepare("SELECT data FROM properties WHERE json_extract(data, '$.available') = 1 ORDER BY updated_at DESC")
-    .all().map((row) => JSON.parse(row.data));
+async function getPublicProperties() {
+  const properties = await getAllProperties();
+  return properties.filter((property) => property.available === true);
 }
 
-function getAllProperties() {
-  return database.prepare("SELECT data FROM properties ORDER BY updated_at DESC")
-    .all().map((row) => JSON.parse(row.data));
+async function getAllProperties() {
+  if (!USE_SUPABASE) {
+    return database.prepare("SELECT data FROM properties ORDER BY updated_at DESC")
+      .all().map((row) => JSON.parse(row.data));
+  }
+  return checkSupabaseResult(
+    await supabase.from("properties").select("data").order("updated_at", { ascending: false }),
+    "property list"
+  ).map((row) => row.data);
 }
 
 function escapeHtml(value) {
@@ -617,14 +759,19 @@ function propertyPage(property) {
 </html>`;
 }
 
-function sitemapXml() {
+async function sitemapXml() {
   if (!SEO_INDEXING_ENABLED) {
     return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
   }
   const entries = [{ loc: `${PUBLIC_URL}/`, lastmod: new Date().toISOString().slice(0, 10) }];
-  const rows = database.prepare("SELECT data, updated_at FROM properties ORDER BY id").all();
+  const rows = USE_SUPABASE
+    ? checkSupabaseResult(
+      await supabase.from("properties").select("data, updated_at").order("id"),
+      "sitemap listing lookup"
+    )
+    : database.prepare("SELECT data, updated_at FROM properties ORDER BY id").all();
   for (const row of rows) {
-    const property = JSON.parse(row.data);
+    const property = USE_SUPABASE ? row.data : JSON.parse(row.data);
     if (property.indexable !== true || property.available !== true) continue;
     entries.push({
       loc: `${PUBLIC_URL}/properties/${propertySlug(property)}`,
@@ -670,7 +817,7 @@ function renderHomepage(request, response) {
   response.end(request.method === "HEAD" ? undefined : html);
 }
 
-function saveProperty(input) {
+async function saveProperty(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw fail(400, "Enter valid property details.");
   }
@@ -678,16 +825,41 @@ function saveProperty(input) {
     ? input.id
     : randomUUID();
   const property = normalizeProperty(input, id);
-  database.prepare(`
-    INSERT INTO properties (id, data, updated_at) VALUES (?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
-  `).run(id, JSON.stringify(property), new Date().toISOString());
+  const updatedAt = new Date().toISOString();
+  if (!USE_SUPABASE) {
+    database.prepare(`
+      INSERT INTO properties (id, data, updated_at) VALUES (?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
+    `).run(id, JSON.stringify(property), updatedAt);
+  } else {
+    checkSupabaseResult(
+      await supabase.from("properties").upsert({ id, data: property, updated_at: updatedAt }),
+      "property save"
+    );
+  }
   return property;
 }
 
-function recordActivity(message) {
-  database.prepare("INSERT INTO activity (message, time) VALUES (?, ?)").run(message.slice(0, 300), new Date().toISOString());
-  database.prepare("DELETE FROM activity WHERE id NOT IN (SELECT id FROM activity ORDER BY id DESC LIMIT 30)").run();
+async function recordActivity(message) {
+  if (!USE_SUPABASE) {
+    database.prepare("INSERT INTO activity (message, time) VALUES (?, ?)").run(message.slice(0, 300), new Date().toISOString());
+    database.prepare("DELETE FROM activity WHERE id NOT IN (SELECT id FROM activity ORDER BY id DESC LIMIT 30)").run();
+    return;
+  }
+  checkSupabaseResult(
+    await supabase.from("activity").insert({ message: message.slice(0, 300), time: new Date().toISOString() }),
+    "activity write"
+  );
+  const older = checkSupabaseResult(
+    await supabase.from("activity").select("id").order("id", { ascending: false }).range(30, 9999),
+    "activity retention lookup"
+  );
+  if (older.length > 0) {
+    checkSupabaseResult(
+      await supabase.from("activity").delete().in("id", older.map((entry) => entry.id)),
+      "activity retention cleanup"
+    );
+  }
 }
 
 function sendFile(request, response, filePath, contentType) {
@@ -711,10 +883,10 @@ async function handleApi(request, response, url) {
   const method = request.method;
   const pathname = url.pathname;
   if (method === "GET" && pathname === "/api/listings") {
-    return respond(response, 200, getPublicProperties());
+    return respond(response, 200, await getPublicProperties());
   }
   if (method === "GET" && pathname === "/api/admin/status") {
-    const admin = database.prepare("SELECT email FROM administrators WHERE id = 1").get();
+    const admin = await getAdministrator();
     return respond(response, 200, {
       configured: Boolean(admin),
       canSetup: !PRODUCTION && isLoopbackAddress(request.socket.remoteAddress)
@@ -737,18 +909,8 @@ async function handleApi(request, response, url) {
       throw fail(400, "Use a valid email address and a password between 14 and 128 characters.");
     }
     const credentials = await hashPassword(password);
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      if (database.prepare("SELECT id FROM administrators WHERE id = 1").get()) {
-        throw fail(409, "An admin account already exists. Sign in instead.");
-      }
-      database.prepare("INSERT INTO administrators (id, email, password_salt, password_hash, created_at) VALUES (1, ?, ?, ?, ?)")
-        .run(email, credentials.salt, credentials.hash, new Date().toISOString());
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
+    if (await getAdministrator()) throw fail(409, "An admin account already exists. Sign in instead.");
+    await createAdministrator(email, credentials);
     const sessionId = randomBytes(32).toString("base64url");
     const csrfToken = randomBytes(32).toString("base64url");
     sessions.set(sessionId, { email, csrfToken, expiresAt: Date.now() + SESSION_LIFETIME_MS });
@@ -765,8 +927,7 @@ async function handleApi(request, response, url) {
     }
     const address = request.socket.remoteAddress || "unknown";
     checkLoginRateLimit(address);
-    const admin = database.prepare("SELECT id, email, password_salt, password_hash FROM administrators WHERE email = ? COLLATE NOCASE")
-      .get(typeof body.email === "string" ? body.email.trim().toLowerCase() : "");
+    const admin = await getAdministratorByEmail(typeof body.email === "string" ? body.email.trim().toLowerCase() : "");
     const salt = admin ? Buffer.from(admin.password_salt, "base64url") : Buffer.alloc(16);
     const expected = admin ? Buffer.from(admin.password_hash, "hex") : Buffer.alloc(PASSWORD_KEY_LENGTH);
     const actual = await scryptAsync(typeof body.password === "string" ? body.password : "", salt, PASSWORD_KEY_LENGTH, PASSWORD_SCRYPT_OPTIONS);
@@ -796,12 +957,12 @@ async function handleApi(request, response, url) {
       });
     }
     if (pathname === "/api/admin/listings" && method === "GET") {
-      return respond(response, 200, getAllProperties());
+      return respond(response, 200, await getAllProperties());
     }
     if (pathname === "/api/admin/listings" && method === "POST") {
       const input = await readJson(request);
-      const property = saveProperty(input);
-      recordActivity(`${input.id ? "Updated" : "Added"} ${property.name} · ${property.price}/month`);
+      const property = await saveProperty(input);
+      await recordActivity(`${input.id ? "Updated" : "Added"} ${property.name} · ${property.price}/month`);
       return respond(response, 200, property);
     }
     const listingMatch = pathname.match(/^\/api\/admin\/listings\/([a-zA-Z0-9_-]{1,100})$/);
@@ -810,19 +971,19 @@ async function handleApi(request, response, url) {
       if (!body || typeof body !== "object" || typeof body.available !== "boolean") {
         throw fail(400, "Choose whether the home is available.");
       }
-      const row = database.prepare("SELECT data FROM properties WHERE id = ?").get(listingMatch[1]);
+      const row = await getProperty(listingMatch[1]);
       if (!row) throw fail(404, "That property could not be found.");
-      const property = { ...JSON.parse(row.data), available: body.available };
-      saveProperty(property);
-      recordActivity(`${property.available ? "Published" : "Paused"} ${property.name}`);
+      const property = { ...(typeof row.data === "string" ? JSON.parse(row.data) : row.data), available: body.available };
+      await saveProperty(property);
+      await recordActivity(`${property.available ? "Published" : "Paused"} ${property.name}`);
       return respond(response, 200, property);
     }
     if (listingMatch && method === "DELETE") {
-      const row = database.prepare("SELECT data FROM properties WHERE id = ?").get(listingMatch[1]);
+      const row = await getProperty(listingMatch[1]);
       if (!row) throw fail(404, "That property could not be found.");
-      const property = JSON.parse(row.data);
-      database.prepare("DELETE FROM properties WHERE id = ?").run(listingMatch[1]);
-      recordActivity(`Deleted ${property.name}`);
+      const property = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+      await deleteProperty(listingMatch[1]);
+      await recordActivity(`Deleted ${property.name}`);
       return respond(response, 200, { ok: true });
     }
     if (pathname === "/api/admin/upload" && method === "POST") {
@@ -838,12 +999,23 @@ async function handleApi(request, response, url) {
         throw fail(400, "The selected photo is invalid or too large.");
       }
       const filename = `${randomUUID()}.jpg`;
-      fs.writeFileSync(path.join(UPLOAD_DIR, filename), image, { flag: "wx", mode: 0o600 });
-      return respond(response, 201, { image: `/uploads/${filename}` });
+      if (!USE_SUPABASE) {
+        fs.writeFileSync(path.join(UPLOAD_DIR, filename), image, { flag: "wx", mode: 0o600 });
+        return respond(response, 201, { image: `/uploads/${filename}` });
+      }
+      const upload = await supabase.storage.from(SUPABASE_PHOTO_BUCKET).upload(filename, image, {
+        contentType: "image/jpeg",
+        cacheControl: "31536000",
+        upsert: false
+      });
+      checkSupabaseResult(upload, "photo upload");
+      return respond(response, 201, {
+        image: supabase.storage.from(SUPABASE_PHOTO_BUCKET).getPublicUrl(filename).data.publicUrl
+      });
     }
     if (pathname === "/api/admin/summary" && method === "GET") {
-      const properties = getAllProperties();
-      const activity = database.prepare("SELECT message, time FROM activity ORDER BY id DESC LIMIT 30").all();
+      const properties = await getAllProperties();
+      const activity = await getActivity();
       const available = properties.filter((property) => property.available).length;
       return respond(response, 200, {
         total: properties.length,
@@ -857,15 +1029,15 @@ async function handleApi(request, response, url) {
       const backup = {
         format: "james-property-mng-backup-v1",
         exportedAt: new Date().toISOString(),
-        properties: getAllProperties(),
-        activity: database.prepare("SELECT message, time FROM activity ORDER BY id DESC LIMIT 30").all()
+        properties: await getAllProperties(),
+        activity: await getActivity()
       };
       return respond(response, 200, backup, {
         "Content-Disposition": `attachment; filename="james-property-backup-${new Date().toISOString().slice(0, 10)}.json"`
       });
     }
     if (pathname === "/api/admin/activity" && method === "DELETE") {
-      database.prepare("DELETE FROM activity").run();
+      await clearActivity();
       return respond(response, 200, { ok: true });
     }
     throw fail(404, "This request is not available.");
@@ -873,7 +1045,7 @@ async function handleApi(request, response, url) {
   return respond(response, 404, { error: "This request is not available." });
 }
 
-function staticFile(request, response, url) {
+async function staticFile(request, response, url) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     response.writeHead(405, { Allow: "GET, HEAD" });
     response.end();
@@ -881,7 +1053,7 @@ function staticFile(request, response, url) {
   }
   if (url.pathname === "/healthz") {
     try {
-      database.prepare("SELECT 1").get();
+      await checkDatabaseHealth();
       return respond(response, 200, { status: "ok" });
     } catch (error) {
       console.error("Health check failed:", error);
@@ -894,7 +1066,7 @@ function staticFile(request, response, url) {
       "Cache-Control": "no-cache",
       "X-Robots-Tag": "noindex"
     });
-    response.end(request.method === "HEAD" ? undefined : sitemapXml());
+    response.end(request.method === "HEAD" ? undefined : await sitemapXml());
     return;
   }
   if (url.pathname === "/robots.txt") {
@@ -916,7 +1088,7 @@ function staticFile(request, response, url) {
   }
   if (url.pathname.startsWith("/properties/")) {
     const slug = url.pathname.slice("/properties/".length);
-    const property = getAllProperties().find((item) => propertySlug(item) === slug);
+    const property = (await getAllProperties()).find((item) => propertySlug(item) === slug);
     if (!property) {
       response.writeHead(404, {
         "Content-Type": "text/html; charset=utf-8",
@@ -984,13 +1156,13 @@ const server = http.createServer((request, response) => {
     return;
   }
   if (request.method === "GET" && request.url === "/healthz") {
-    try {
-      database.prepare("SELECT 1").get();
-      return respond(response, 200, { status: "ok" });
-    } catch (error) {
+    checkDatabaseHealth().then(() => {
+      respond(response, 200, { status: "ok" });
+    }).catch((error) => {
       console.error("Health check failed:", error);
-      return respond(response, 503, { error: "The service is temporarily unavailable." });
-    }
+      respond(response, 503, { error: "The service is temporarily unavailable." });
+    });
+    return;
   }
   let url;
   try {
@@ -1002,7 +1174,7 @@ const server = http.createServer((request, response) => {
   if (url.pathname.startsWith("/api/")) response.setHeader("X-Robots-Tag", "noindex, nofollow");
   const operation = url.pathname.startsWith("/api/")
     ? handleApi(request, response, url)
-    : Promise.resolve(staticFile(request, response, url));
+    : staticFile(request, response, url);
   operation.catch((error) => {
     if (response.headersSent) {
       response.destroy(error);
@@ -1062,7 +1234,7 @@ function promptHidden(prompt) {
 }
 
 async function setupAdministrator(reset = false) {
-  const existing = database.prepare("SELECT email FROM administrators WHERE id = 1").get();
+  const existing = await getAdministrator();
   if (existing && !reset) throw new Error(`An admin account already exists (${existing.email}). Use the reset-admin command to change its password.`);
   const email = (process.argv[3] || await promptLine("Admin email address: ")).toLowerCase();
   if (!validEmail(email)) throw new Error("Enter a valid admin email address.");
@@ -1083,11 +1255,8 @@ async function setupAdministrator(reset = false) {
   } while (!password || password !== confirmation);
 
   const credentials = await hashPassword(password);
-  const statement = existing
-    ? database.prepare("UPDATE administrators SET password_salt = ?, password_hash = ? WHERE id = 1")
-    : database.prepare("INSERT INTO administrators (id, email, password_salt, password_hash, created_at) VALUES (1, ?, ?, ?, ?)");
-  if (existing) statement.run(credentials.salt, credentials.hash);
-  else statement.run(email, credentials.salt, credentials.hash, new Date().toISOString());
+  if (existing) await updateAdministrator(credentials);
+  else await createAdministrator(email, credentials);
   sessions.clear();
   process.stdout.write(existing
     ? `Admin password updated for ${email}.\n`
@@ -1097,24 +1266,26 @@ async function setupAdministrator(reset = false) {
 
 async function main() {
   const command = process.argv[2];
+  if (USE_SUPABASE) await initializeSupabase();
   if (command === "setup-admin" || command === "reset-admin") {
     await setupAdministrator(command === "reset-admin");
-    database.close();
+    if (database) database.close();
     return;
   }
+  const admin = await getAdministrator();
   server.listen(PORT, HOST, () => {
     const protocol = PRODUCTION ? "https" : "http";
     process.stdout.write(`James Property MNG is running behind ${protocol} at ${HOST}:${PORT}\n`);
     process.stdout.write(`Website: ${process.env.PUBLIC_URL || `${protocol}://localhost:${PORT}`}\n`);
     if (!PRODUCTION) process.stdout.write(`Admin sign-in: http://localhost:${PORT}/#manage\n`);
-    if (!database.prepare("SELECT id FROM administrators WHERE id = 1").get()) {
+    if (!admin) {
       if (PRODUCTION) {
         process.stdout.write(`No admin account is configured. Create it in the private host shell with: npm run setup:admin -- ${process.env.ADMIN_EMAIL || "jamespropertymng@gmail.com"}\n`);
       } else {
         process.stdout.write("Create your admin account from this computer at the secure setup screen.\n");
       }
     }
-    if (PRODUCTION && !process.env.DATA_DIR) {
+    if (PRODUCTION && !USE_SUPABASE && !process.env.DATA_DIR) {
       console.warn("DATA_DIR is not set. Configure a persistent volume before deployment.");
     }
   });

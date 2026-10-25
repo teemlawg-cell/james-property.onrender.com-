@@ -1,6 +1,6 @@
 # James Property MNG — Start here
 
-This guide starts the website on your computer and creates your private owner account. You do not need to edit code or install extra packages.
+This guide starts the website on your computer and creates your private owner account. You do not need to edit code.
 
 ## Your owner sign-in details
 
@@ -15,16 +15,22 @@ This guide starts the website on your computer and creates your private owner ac
 2. Open the **housing website** folder in File Explorer.
 3. Click the folder’s address bar, type `powershell`, and press **Enter**. A PowerShell window opens in the right folder.
 4. Type `node --version` and press **Enter**. If Windows reports that Node is not found, install Node.js and reopen PowerShell.
-5. Start the website by entering:
+5. Install the project packages by entering:
+
+   ```powershell
+   npm.cmd install
+   ```
+
+6. Start the website by entering:
 
    ```powershell
    npm.cmd start
    ```
 
-6. Leave that PowerShell window open while using the website. Open `http://127.0.0.1:3000` in your browser. **Do not open `index.html` directly**; the secure website needs the server running.
-7. Click the small three-dot icon in the website footer five times within ten seconds to open the owner sign-in page. You can also open `http://127.0.0.1:3000/#manage` directly.
-8. On the first visit, the owner setup form is available only from this computer. Confirm the admin email, create a private password of at least 14 characters, confirm it, and select **Create secure admin account**. Save the password in your own password manager.
-9. The account is then created once. From now on, use the email and password on the owner sign-in form. Public visitors cannot create an account. The server allows five failed sign-in attempts per 15 minutes from the same address.
+7. Leave that PowerShell window open while using the website. Open `http://127.0.0.1:3000` in your browser. **Do not open `index.html` directly**; the secure website needs the server running.
+8. Click the small three-dot icon in the website footer five times within ten seconds to open the owner sign-in page. You can also open `http://127.0.0.1:3000/#manage` directly.
+9. On the first visit, the owner setup form is available only from this computer. Confirm the admin email, create a private password of at least 14 characters, confirm it, and select **Create secure admin account**. Save the password in your own password manager.
+10. The account is then created once. From now on, use the email and password on the owner sign-in form. Public visitors cannot create an account. The server allows five failed sign-in attempts per 15 minutes from the same address.
 
 **Do not share your password in chat, email, or a screenshot.** If this computer is shared, sign out of the dashboard and protect your Windows account with its own password.
 
@@ -54,26 +60,41 @@ The footer icon gesture only keeps the sign-in entrance out of the public naviga
 - The website serves its files and API from the Node.js server; the owner password is **not** checked in the public browser code.
 - The admin password must contain 14–128 characters. The server stores a salted `scrypt` password hash, not the password itself.
 - Owner access uses a random, HTTP-only, SameSite session cookie with an eight-hour lifetime and a CSRF token for changes.
-- Listing information and uploaded photographs are stored in the server's `data` folder. The browser never stores the admin session in local storage.
+- On this computer, listing information and uploaded photographs are stored in the server's `data` folder. In the free hosted setup, listings and owner credentials are stored in Supabase Postgres, and uploaded photos are stored in its public photo bucket. The browser never stores the admin session in local storage.
 - The server binds to this computer only by default. First-time account creation is available only from this computer and is disabled after the first account is created.
 
 Keep the `data` folder private; it contains your property database and private account hash. The database is excluded from Git. Back up the **Download a backup** JSON and separately include the uploaded photos or the full `data` folder in your private computer backup.
 
-## Prepare and deploy to Render
+## Free hosting with Render and Supabase
 
-The repository includes a Render Blueprint at `render.yaml` for a Node.js web service with HTTPS, health checks, and a persistent 1 GB disk mounted at `/var/data`. Use Render's included `onrender.com` address; no custom domain registration or DNS changes are needed. Render's published pricing currently lists the configured web service at $7/month and SSD storage at $0.25/GB/month, for an estimated base of about $7.25/month with this 1 GB disk. Prices and additional usage charges can change, so review Render's current pricing and account estimate before creating the service. The user has authorized this approximate base hosting plan, but no service has been created. The disk is attached to one service instance, so do not increase the instance count. Persistent disks also mean deploys can briefly interrupt the website.
+The Render Blueprint uses a free Node.js web service and Render's included `onrender.com` address; a custom domain is optional and costs extra. Render's free service sleeps after 15 minutes without traffic, may take about a minute to wake, and has an ephemeral filesystem. The app therefore stores listings in Supabase Postgres and photos in Supabase Storage instead of relying on Render's local disk. Supabase's current free tier includes 500 MB of database and 1 GB of file storage, but pauses projects after one week without activity. Render describes free instances as suitable for testing and hobby projects, not production. These free limits and prices may change.
 
-1. Create a **private** GitHub repository and publish the website source to it. Do not add `.env` files, the `data` folder, the SQLite database, or uploaded owner photos. The `.gitignore` file excludes private runtime data.
-2. In Render, select **New > Blueprint**, connect the private repository, and review `render.yaml` and the account's cost estimate. Create only the configured single service and 1 GB persistent disk; do not add paid services or extra instances.
-3. Wait for the first deploy to pass its `/healthz` check. A new production database is initialized with illustrative starter listings; it does not contain your local owner account, database edits, or uploads.
-4. In the service's private Shell, create the owner account with `npm run setup:admin -- jamespropertymng@gmail.com`. Type a unique 14–128 character password only in the private terminal prompts. Do not set the password as an environment variable. Use `npm run reset:admin -- jamespropertymng@gmail.com` in the private Shell if it ever needs to be changed.
-5. Open the service's **Settings** and copy the exact free `onrender.com` hostname assigned by Render. The intended target is `james-property.onrender.com`; if Render assigns a different hostname, update `PUBLIC_URL` to that exact HTTPS address and redeploy so canonical links and the sitemap use the live URL. Render provides HTTPS for its service hostname.
-6. Open the HTTPS website, sign in, replace illustrative listings with real, owner-approved homes and photos, and verify that edits remain after a deploy. Leave search indexing disabled while examples remain. Each listing's search-indexing checkbox is an owner attestation that its details and rent are verified. Only after all public content is ready, change Render's `SEO_INDEXING_ENABLED` environment variable to `true` and redeploy. Regularly download a listings backup and separately back up the persistent disk, which includes uploaded photos.
-7. Once the service hostname is live and the site is ready to be public, open [Google Search Console](https://search.google.com/search-console/) and add a **URL-prefix property** using the exact HTTPS `onrender.com` address. Select a verification method available for that hosted address. Submit the sitemap at `<PUBLIC_URL>/sitemap.xml`. Use URL Inspection on the homepage and verified property pages to request crawling; review Page indexing and Core Web Vitals reports over time. Verification, submission, and requests do not guarantee crawling, indexing, rankings, or a particular performance score.
+1. Sign in to Supabase and create a project on the **Free** plan. Choose a US region near Render's Oregon region if available. Save the database password somewhere private; do not send it in chat.
+2. In the new Supabase project, open **SQL Editor**, then run the contents of `supabase/schema.sql`. This creates the app's tables, enables row-level security, grants access only to the backend service role, and creates the public JPEG photo bucket.
+3. In Supabase **Project Settings > API**, copy the project URL and the `service_role` key. Treat the service-role key as a password. Never put it in website files or GitHub.
+4. Before creating the Render service, copy your existing local listings, admin account, and uploaded photos to Supabase. In PowerShell opened in the project folder, enter:
 
-Render sets `PORT`; this service binds to `0.0.0.0`, stores the SQLite database and uploaded photos under `/var/data`, and requires HTTPS outside its health check. The hosting proxy must forward `X-Forwarded-Proto: https`. The service is designed for one instance because sessions are held in memory and SQLite/photo storage use the persistent disk.
+   ```powershell
+   $env:SUPABASE_URL = Read-Host "Supabase project URL"
+   $serviceKey = Read-Host "Supabase service-role key" -AsSecureString
+   $env:SUPABASE_SERVICE_ROLE_KEY = [System.Net.NetworkCredential]::new("", $serviceKey).Password
+   try {
+     npm.cmd run migrate:supabase
+   } finally {
+     Remove-Item Env:SUPABASE_URL, Env:SUPABASE_SERVICE_ROLE_KEY -ErrorAction SilentlyContinue
+     $serviceKey.Dispose()
+     Remove-Variable serviceKey -ErrorAction SilentlyContinue
+   }
+   ```
 
-The intended free Render hostname is `james-property.onrender.com`; it has not been confirmed as provisioned for this app. No Render service has been created, no custom domain has been purchased, and no DNS records have been changed. Contact email, phone, and Instagram links shown to visitors use the details supplied for this project.
+   The key prompt is hidden. Migration requires empty application tables in the new Supabase project and leaves your local database and photos unchanged. It copies the existing salted admin password hash, so the current owner password remains the same. Do not start the Render service until the migration has completed; its first startup seeds sample homes when the remote listings table is empty.
+5. In Render, select **New > Blueprint**, connect the existing GitHub repository, and review the Blueprint. Enter the Supabase project URL and service-role key only in Render's private environment-variable prompts. Create the single free web service; do not add paid services.
+6. Wait for `/healthz` to pass. The service connects to your migrated Supabase data; Render's local filesystem is not used for persistent listings or photos.
+7. Open the HTTPS `onrender.com` address and sign in with your existing admin email and password. If you need to reset the password, repeat the hidden-key PowerShell setup above and run `npm.cmd run reset:admin -- jamespropertymng@gmail.com` instead of the migration command. If no admin account was migrated, run `npm.cmd run setup:admin -- jamespropertymng@gmail.com`; it prompts for a new password without saving it in the website files.
+8. Replace all illustrative listings with real, owner-approved homes and photos, and test adding/editing a listing. Keep search indexing disabled until the public information has been verified.
+9. For backups, regularly use **Download a backup** for listing data and separately download the Supabase Storage photos. Do not rely on free-tier services as the only copy of important business data.
+
+The Render service uses one instance because login sessions are held in memory; a sleep, restart, or deploy signs the owner out. The Render free service hostname has not been confirmed or provisioned for this app. No hosting project, domain, or DNS changes have been made. Contact details displayed to visitors use the information supplied for this project.
 
 ## Search visibility safeguards
 
