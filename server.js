@@ -1130,7 +1130,8 @@ async function staticFile(request, response, url) {
     ["/app.js", ["app.js", "text/javascript; charset=utf-8"]],
     ["/assets/townhouse-cover.jpg", ["assets/townhouse-cover.jpg", "image/jpeg"]],
     ["/START-HERE.md", ["START-HERE.md", "text/plain; charset=utf-8"]],
-    ["/google3dbfeb8e4af44aae.html", ["google3dbfeb8e4af44aae.html", "text/html; charset=utf-8"]]
+    ["/google3dbfeb8e4af44aae.html", ["google3dbfeb8e4af44aae.html", "text/html; charset=utf-8"]],
+    ["/googled05da430302d6668.html", ["googled05da430302d6668.html", "text/html; charset=utf-8"]]
   ]);
   const asset = assets.get(pathname);
   if (pathname === "/") {
