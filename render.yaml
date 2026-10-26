@@ -18,7 +18,7 @@ services:
       - key: PUBLIC_URL
         value: https://james-property.onrender.com
       - key: SEO_INDEXING_ENABLED
-        value: "false"
+        value: "true"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
